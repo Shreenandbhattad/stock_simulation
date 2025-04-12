@@ -1,0 +1,671 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AWIFS - Mock Stock Competition</title>
+  <!-- Google Fonts for improved typography -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* RESET */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body, html { font-family: 'Roboto', sans-serif; background: #f0f2f5; color: #444; }
+    
+    /* SIDEBAR */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 240px;
+      height: 100vh;
+      background: linear-gradient(180deg, #283e56, #2e5984);
+      color: #fff;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .sidebar h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+    .sidebar ul { list-style: none; }
+    .sidebar ul li {
+      padding: 15px 20px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: background 0.3s;
+    }
+    .sidebar ul li:hover, .sidebar ul li.active {
+      background-color: #34495e;
+    }
+    
+    /* MAIN CONTENT */
+    .main-content {
+      margin-left: 260px;
+      padding: 20px;
+    }
+    .header {
+      margin-bottom: 20px;
+    }
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 5px;
+    }
+    .header p { font-size: 16px; }
+    
+    /* CARD STYLES */
+    .card {
+      background: #fff;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .card h2 { margin-bottom: 15px; }
+    
+    /* Portfolio and Trades Container (Merged Tab) */
+    .merged-container {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .portfolio-container, .trades-container {
+      flex: 1;
+      min-width: 300px;
+    }
+    
+    /* Portfolio Section Redesign */
+    .portfolio-container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .portfolio-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
+    .portfolio-header h2 {
+      font-size: 24px;
+      font-weight: 500;
+    }
+    .portfolio-header img {
+      width: 120px;
+      height: auto;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* FORM STYLES */
+    form label { display: block; margin: 10px 0 5px; }
+    form input, form select { padding: 8px; width: 100%; border: 1px solid #ccc; border-radius: 3px; }
+    form button { margin-top: 15px; padding: 10px 15px; border: none; background-color: #27ae60; color: #fff; border-radius: 3px; cursor: pointer; }
+    
+    /* BUTTON STYLES */
+    .btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    .btn-accept { background-color: #27ae60; color: #fff; }
+    .btn-reject { background-color: #c0392b; color: #fff; }
+    
+    /* TABS */
+    .tab { display: none; }
+    .tab.active { display: block; }
+    
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(0,0,0,0.2);
+      border-top-color: rgba(0,0,0,0.6);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-left: 10px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Portfolio Table Styling */
+    .portfolio-container table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .portfolio-container th, .portfolio-container td {
+      text-align: left;
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+    .portfolio-container th {
+      background-color: #f8f8f8;
+    }
+    
+    /* Stocks Table Styling */
+    .stocks-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .stocks-table th, .stocks-table td {
+      text-align: left;
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+    .stocks-table th {
+      background-color: #f8f8f8;
+    }
+    
+    /* News Flash Styling */
+    .news-item {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 15px 0;
+      font-size: 18px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Leaderboard Table Styling */
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .leaderboard-table th, .leaderboard-table td {
+      text-align: left;
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+    .leaderboard-table th {
+      background-color: #f8f8f8;
+    }
+  </style>
+</head>
+<body>
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <h2>AWIFS<br>Mock Stock</h2>
+    <ul>
+      <!-- Updated first sidebar item to load the merged Portfolio & Trades tab -->
+      <li class="active" onclick="showTab('portfolioTab')">Portfolio & Trades</li>
+      <li onclick="showTab('stocksTab')">Stocks</li>
+      <li onclick="showTab('newsTab')">News Flash</li>
+      <li onclick="showTab('leaderboardTab')">Leaderboard</li>
+    </ul>
+  </div>
+  
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    <!-- Merged Portfolio & Trades Tab -->
+    <div id="portfolioTab" class="tab active">
+      <div class="merged-container">
+        <!-- Portfolio Section (Left Side) -->
+        <div class="portfolio-container">
+          <div class="portfolio-header">
+            <h2>Your Portfolio</h2>
+            <img src="https://github.com/awifs/stock_simulator/blob/main/Screenshot%202025-04-05%20200317.png?raw=true" alt="Portfolio Overview">
+          </div>
+          <div id="portfolioData">
+            <p>Loading portfolio data...</p>
+          </div>
+        </div>
+        <!-- Trades Section (Right Side) -->
+        <div class="trades-container">
+          <div class="card">
+            <h2>Submit a Trade Request</h2>
+            <form id="tradeForm">
+              <!-- Hidden Buyer Info -->
+              <input type="hidden" id="buyerUID" name="buyerUID" value="T18">
+              <input type="hidden" id="buyerName" name="buyerName" value="Titans">
+              <p><strong>Logged in as:</strong> T18 - Titans</p>
+              
+              <label for="sellerUID">Buy from:</label>
+              <input type="text" id="sellerUID" name="sellerUID" required>
+  
+              <label for="stock">Stock:</label>
+              <!-- Dropdown menu for stock selection -->
+              <select id="stock" name="stock" required>
+                <option value="">Select Stock</option>
+                <option value="ITC">ITC</option>
+                <option value="HDFC Bank">HDFC Bank</option>
+                <option value="Infosys">Infosys</option>
+                <option value="Mazagon Dock Shipbuilders">Mazagon Dock Shipbuilders</option>
+                <option value="Bharti Airtel">Bharti Airtel</option>
+                <option value="Zomato">Zomato</option>
+                <option value="Waaree Energies">Waaree Energies</option>
+                <option value="Shyam Metallics">Shyam Metallics</option>
+                <option value="Ola Electric Mobility">Ola Electric Mobility</option>
+                <option value="Mankind Pharma">Mankind Pharma</option>
+                <option value="EID Parry">EID Parry</option>
+                <option value="DLF">DLF</option>
+                <option value="Lemontree Hotels">Lemontree Hotels</option>
+                <option value="Amara Raja">Amara Raja</option>
+                <option value="Indegene">Indegene</option>
+                <option value="Nippon Gold ETF">Nippon Gold ETF</option>
+                <option value="Brookfield India Real Estate Trust (BIRET)">Brookfield India Real Estate Trust (BIRET)</option>
+                <option value="Crude Oil">Crude Oil</option>
+              </select>
+  
+              <label for="quantity">Quantity:</label>
+              <input type="number" id="quantity" name="quantity" required>
+              
+              <label for="price">Price:</label>
+              <!-- Readonly price field auto-updated based on selected stock -->
+              <input type="number" step="0.01" id="price" name="price" readonly required>
+              
+              <label for="totalSize">Total Buying Size:</label>
+              <input type="number" step="0.01" id="totalSize" name="totalSize" readonly required>
+              
+              <button type="submit" id="submitButton">Submit Trade Request</button>
+              <span id="spinner" class="spinner" style="display:none;"></span>
+            </form>
+            <p id="statusMessage"></p>
+          </div>
+          <div class="card">
+            <h2>Incoming Trade Requests</h2>
+            <div id="incomingRequests">
+              <p>Loading incoming requests...</p>
+            </div>
+          </div>
+          <div class="card">
+            <h2>Your Trade History</h2>
+            <div id="tradeHistory">
+              <p>Loading trade history...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Stocks Tab -->
+    <div id="stocksTab" class="tab">
+      <div class="card">
+        <h2>Current Stock Prices</h2>
+        <div id="stocksData">
+          <p>Loading stock data...</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- News Flash Tab -->
+    <div id="newsTab" class="tab">
+      <div class="card">
+        <h2>News flash</h2>
+        <div id="newsData">
+          <p>Loading news flash...</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Leaderboard Tab -->
+    <div id="leaderboardTab" class="tab">
+      <div class="card">
+        <h2>Leaderboard</h2>
+        <div id="leaderboardData">
+          <p>Loading leaderboard data...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // When the stock selection changes, update the price field automatically.
+    document.getElementById("stock").addEventListener("change", function(){
+      var selectedStock = this.value;
+      if(selectedStock !== ""){
+        fetchStockPriceForSymbol(selectedStock);
+      } else {
+        document.getElementById("price").value = "";
+        updateTotalSize();
+      }
+    });
+    
+    // Update Total Buying Size based on quantity and price
+    document.getElementById("quantity").addEventListener("input", updateTotalSize);
+    
+    function updateTotalSize(){
+      var quantity = parseFloat(document.getElementById("quantity").value) || 0;
+      var price = parseFloat(document.getElementById("price").value) || 0;
+      var total = quantity * price;
+      document.getElementById("totalSize").value = total.toFixed(2);
+    }
+    
+    function fetchStockPriceForSymbol(symbol){
+      const scriptURL = 'https://script.google.com/macros/s/AKfycbxgkYW8bOy6pjz27iIdN7KGRWhjl0ZBVrhFpvdIavEtrt157jzWzuaMfA44IqbjsLzR1w/exec?action=getStocks';
+      fetch(scriptURL)
+        .then(response => response.json())
+        .then(data => {
+          const stockObj = data.find(s => s.symbol === symbol);
+          if(stockObj){
+            document.getElementById("price").value = stockObj.price.toFixed(2);
+          } else {
+            document.getElementById("price").value = "";
+          }
+          updateTotalSize();
+        })
+        .catch(error => console.error("Error fetching stock price:", error));
+    }
+    
+    // Switch tabs and update sidebar active state
+    function showTab(tabId) {
+      document.querySelectorAll('.sidebar ul li').forEach(li => li.classList.remove('active'));
+      // Updated for merged Portfolio & Trades tab
+      if(tabId === 'portfolioTab'){
+        document.querySelector('.sidebar ul li:nth-child(1)').classList.add('active');
+        fetchPortfolio();
+        fetchIncomingRequests();
+        fetchTradeHistory();
+      } else if(tabId === 'stocksTab'){
+        document.querySelector('.sidebar ul li:nth-child(2)').classList.add('active');
+        fetchStocks();
+      } else if(tabId === 'newsTab'){
+        document.querySelector('.sidebar ul li:nth-child(3)').classList.add('active');
+        fetchNews();
+      } else if(tabId === 'leaderboardTab'){
+        document.querySelector('.sidebar ul li:nth-child(4)').classList.add('active');
+        fetchLeaderboard();
+      }
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+    }
+    
+    // Fetch portfolio data for the logged-in participant
+    function fetchPortfolio() {
+      const uid = document.getElementById('buyerUID').value;
+      const scriptURL = 'https://script.google.com/macros/s/AKfycbxgkYW8bOy6pjz27iIdN7KGRWhjl0ZBVrhFpvdIavEtrt157jzWzuaMfA44IqbjsLzR1w/exec?action=getPortfolio&uid=' + uid;
+      
+      fetch(scriptURL)
+        .then(response => response.json())
+        .then(data => {
+          const container = document.getElementById("portfolioData");
+          const participant = data.participant;
+          const stocks = data.stocks;
+          
+          let html = `<h3>${participant.name} (${participant.uid})</h3>
+                      <p><strong>Portfolio Value:</strong> ₹${participant.portfolioValue.toFixed(2)}</p>
+                      <h4>Your Holdings</h4>`;
+          
+          if(Object.keys(participant.holdings).length === 0){
+            html += `<p>No holdings available.</p>`;
+          } else {
+            html += `<table>
+                      <tr>
+                        <th>Stock</th>
+                        <th>Shares</th>
+                        <th>Current Price</th>
+                        <th>Value</th>
+                      </tr>`;
+            for(let stock in participant.holdings) {
+              const shares = participant.holdings[stock];
+              const stockInfo = stocks.find(s => s.symbol === stock);
+              const price = stockInfo ? stockInfo.price : 0;
+              const value = shares * price;
+              html += `<tr>
+                        <td>${stock}</td>
+                        <td>${shares}</td>
+                        <td>₹${price.toFixed(2)}</td>
+                        <td>₹${value.toFixed(2)}</td>
+                      </tr>`;
+            }
+            html += `</table>`;
+          }
+          
+          container.innerHTML = html;
+        })
+        .catch(error => {
+          console.error("Error fetching portfolio data:", error);
+          document.getElementById("portfolioData").innerHTML = "<p>Error loading portfolio data.</p>";
+        });
+    }
+    
+    // Trade submission logic with spinner indicator
+    const form = document.getElementById('tradeForm');
+    const statusMessage = document.getElementById('statusMessage');
+    const submitButton = document.getElementById('submitButton');
+    const spinner = document.getElementById('spinner');
+    
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      spinner.style.display = 'inline-block';
+      submitButton.disabled = true;
+      
+      const formData = new URLSearchParams(new FormData(form));
+      const scriptURL = 'https://script.google.com/macros/s/AKfycbxgkYW8bOy6pjz27iIdN7KGRWhjl0ZBVrhFpvdIavEtrt157jzWzuaMfA44IqbjsLzR1w/exec?action=submitTrade';
+      fetch(scriptURL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: formData.toString()
+      })
+      .then(() => {
+        statusMessage.textContent = 'Trade request submitted successfully!';
+        form.reset();
+        submitButton.disabled = false;
+        spinner.style.display = 'none';
+        updateTotalSize();
+        // Optionally refresh trade history and incoming requests after submission
+        fetchIncomingRequests();
+        fetchTradeHistory();
+      })
+      .catch(error => {
+        console.error('Error!', error.message);
+        statusMessage.textContent = 'Submission failed. Please try again.';
+        submitButton.disabled = false;
+        spinner.style.display = 'none';
+      });
+    });
+    
+    // Fetch active incoming requests for seller T18
+    function fetchIncomingRequests() {
+      const sellerUID = "T18";
+      const scriptURL = 'https://script.google.com/macros/s/AKfycbxgkYW8bOy6pjz27iIdN7KGRWhjl0ZBVrhFpvdIavEtrt157jzWzuaMfA44IqbjsLzR1w/exec?action=getIncomingRequests&sellerUID=' + sellerUID;
+      
+      fetch(scriptURL)
+        .then(response => response.json())
+        .then(data => {
+          const container = document.getElementById("incomingRequests");
+          if (data.length === 0) {
+            container.innerHTML = "<p>No active incoming requests.</p>";
+          } else {
+            let html = "<ul>";
+            data.forEach(req => {
+              const totalSize = (req.quantity * req.price).toFixed(2);
+              html += `<li style="margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
+                        <p><strong>Trade ID:</strong> ${req.tradeId}</p>
+                        <p>From: ${req.buyerName} (${req.buyerUID})</p>
+                        <p>Stock: ${req.stock} – ${req.quantity} shares @ ₹${req.price} on ${new Date(req.timestamp).toLocaleString()}</p>
+                        <p><strong>Total Buying Size:</strong> ₹${totalSize}</p>
+                        <button class="btn btn-accept" onclick="processTrade('${req.tradeId}', 'acceptTrade', this)">Accept</button>
+                        <button class="btn btn-reject" onclick="processTrade('${req.tradeId}', 'rejectTrade', this)">Reject</button>
+                        <span id="spinner_${req.tradeId}" class="spinner" style="display:none;"></span>
+                      </li>`;
+            });
+            html += "</ul>";
+            container.innerHTML = html;
+          }
+        })
+        .catch(error => console.error("Error fetching incoming requests:", error));
+    }
+    
+    // Process accept/reject action for a trade with spinner and custom message
+    function processTrade(tradeId, action, btnElem) {
+      if (!confirm(`Are you sure you want to ${action === 'acceptTrade' ? 'accept' : 'reject'} this trade?`)) return;
+      // Show spinner next to the buttons for this trade item
+      const spinnerElem = document.getElementById("spinner_" + tradeId);
+      if (spinnerElem) spinnerElem.style.display = 'inline-block';
+      
+      const scriptURL = 'https://script.google.com/macros/s/AKfycbxgkYW8bOy6pjz27iIdN7KGRWhjl0ZBVrhFpvdIavEtrt157jzWzuaMfA44IqbjsLzR1w/exec';
+      const params = new URLSearchParams();
+      params.append('action', action);
+      params.append('tradeId', tradeId);
+      
+      fetch(scriptURL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: params.toString()
+      })
+      .then(response => response.text())
+      .then(result => {
+         if (spinnerElem) spinnerElem.style.display = 'none';
+         if (action === 'acceptTrade') {
+           // If the response includes the error message about seller shares, display that; otherwise show success message.
+           if(result.includes("Seller does not have enough shares")){
+             alert(result);
+           } else {
+             alert("Trade accepted successfully. The buyer has been notified of the successful trade.");
+           }
+         } else if (action === 'rejectTrade') {
+            alert("Trade rejected. An error message has been sent to the buyer.");
+         }
+         fetchIncomingRequests();
+         fetchTradeHistory();
+      })
+      .catch(error => {
+         if (spinnerElem) spinnerElem.style.display = 'none';
+         console.error('Error processing trade:', error);
+         alert("An error occurred processing the trade. Please try again.");
+      });
+    }
+    
+    // Fetch trade history for the logged-in buyer
+    function fetchTradeHistory() {
+      const buyerUID = document.getElementById('buyerUID').value;
+      const scriptURL = 'https://script.google.com/macros/s/AKfycbxgkYW8bOy6pjz27iIdN7KGRWhjl0ZBVrhFpvdIavEtrt157jzWzuaMfA44IqbjsLzR1w/exec?action=getTradeHistory&buyerUID=' + buyerUID;
+      
+      fetch(scriptURL)
+        .then(response => response.json())
+        .then(data => {
+          const container = document.getElementById("tradeHistory");
+          if (data.length === 0) {
+            container.innerHTML = "<p>No trade history available.</p>";
+          } else {
+            let html = "<ul>";
+            data.forEach(trade => {
+              const totalSize = (trade.quantity * trade.price).toFixed(2);
+              html += `<li style="margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
+                        <p><strong>Trade ID:</strong> ${trade.tradeId}</p>
+                        <p>Seller: ${trade.sellerUID}</p>
+                        <p>Stock: ${trade.stock} – ${trade.quantity} shares @ ₹${trade.price} (${trade.status})</p>
+                        <p><strong>Total Buying Size:</strong> ₹${totalSize}</p>
+                      </li>`;
+            });
+            html += "</ul>";
+            container.innerHTML = html;
+          }
+        })
+        .catch(error => {
+          console.error("Error fetching trade history:", error);
+          document.getElementById("tradeHistory").innerHTML = "<p>Error loading trade history.</p>";
+        });
+    }
+    
+    // Fetch stocks data for the Stocks tab
+    function fetchStocks() {
+      const scriptURL = 'https://script.google.com/macros/s/AKfycbxgkYW8bOy6pjz27iIdN7KGRWhjl0ZBVrhFpvdIavEtrt157jzWzuaMfA44IqbjsLzR1w/exec?action=getStocks';
+      fetch(scriptURL)
+        .then(response => response.json())
+        .then(data => {
+          const container = document.getElementById("stocksData");
+          if (data.length === 0) {
+            container.innerHTML = "<p>No stock data available.</p>";
+          } else {
+            let html = `<table class="stocks-table">
+                          <tr>
+                            <th>Stock</th>
+                            <th>Price</th>
+                          </tr>`;
+            data.forEach(stock => {
+              html += `<tr>
+                        <td>${stock.symbol}</td>
+                        <td>₹${stock.price.toFixed(2)}</td>
+                      </tr>`;
+            });
+            html += `</table>`;
+            container.innerHTML = html;
+          }
+        })
+        .catch(error => {
+          console.error("Error fetching stocks data:", error);
+          document.getElementById("stocksData").innerHTML = "<p>Error loading stock data.</p>";
+        });
+    }
+    
+    // Fetch news flash data for the News Flash tab
+    function fetchNews() {
+      const scriptURL = 'https://script.google.com/macros/s/AKfycbxgkYW8bOy6pjz27iIdN7KGRWhjl0ZBVrhFpvdIavEtrt157jzWzuaMfA44IqbjsLzR1w/exec?action=getNews';
+      fetch(scriptURL)
+        .then(response => response.json())
+        .then(data => {
+          const container = document.getElementById("newsData");
+          if (data.length === 0) {
+            container.innerHTML = "<p>No news flash available.</p>";
+          } else {
+            let html = "";
+            data.forEach(item => {
+              html += `<div class="news-item">
+                        <p>${item.news}</p>
+                      </div>`;
+            });
+            container.innerHTML = html;
+          }
+        })
+        .catch(error => {
+          console.error("Error fetching news data:", error);
+          document.getElementById("newsData").innerHTML = "<p>Error loading news flash.</p>";
+        });
+    }
+    
+    // Fetch leaderboard data for the Leaderboard tab
+    function fetchLeaderboard() {
+      const scriptURL = 'https://script.google.com/macros/s/AKfycbxgkYW8bOy6pjz27iIdN7KGRWhjl0ZBVrhFpvdIavEtrt157jzWzuaMfA44IqbjsLzR1w/exec?action=getLeaderboard';
+      fetch(scriptURL)
+        .then(response => response.json())
+        .then(data => {
+          const container = document.getElementById("leaderboardData");
+          if (data.length === 0) {
+            container.innerHTML = "<p>No leaderboard data available.</p>";
+          } else {
+            let html = `<table class="leaderboard-table">
+                          <tr>
+                            <th>Rank</th>
+                            <th>UID</th>
+                            <th>Name</th>
+                            <th>Portfolio Value</th>
+                          </tr>`;
+            data.forEach((participant, index) => {
+              html += `<tr>
+                        <td>${index + 1}</td>
+                        <td>${participant.uid}</td>
+                        <td>${participant.name}</td>
+                        <td>₹${participant.portfolioValue.toFixed(2)}</td>
+                      </tr>`;
+            });
+            html += `</table>`;
+            container.innerHTML = html;
+          }
+        })
+        .catch(error => {
+          console.error("Error fetching leaderboard data:", error);
+          document.getElementById("leaderboardData").innerHTML = "<p>Error loading leaderboard data.</p>";
+        });
+    }
+    
+    // Load merged Portfolio & Trades tab by default
+    window.onload = function() {
+      showTab('portfolioTab');
+    }
+  </script>
+</body>
+</html>

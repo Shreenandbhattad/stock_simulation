@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f4f4f4;
+            margin: 0;
+        }
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 300px;
+        }
+        h2 {
+            margin-bottom: 1rem;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+    </style>
+    <script>
+        function login() {
+            const uid = document.getElementById("uid").value.trim();
+            const errorMsg = document.getElementById("error-msg");
+
+            if (uid === "A100") {
+                window.location.href = "shreenand.html";
+            } else if (uid === "A200") {
+                window.location.href = "kamya.html";
+            } else if (uid === "A300") {
+                window.location.href = "neeraja.html";
+            } else if (uid === "A000") {
+                window.location.href = "admin.html";
+            } else if (uid === "A400") {
+                window.location.href = "anushka.html";
+            } else if (uid === "A500") {
+                window.location.href = "vedika.html";
+            } else if (uid === "A600") {
+                window.location.href = "kaashvi.html";
+            } else if (uid === "74932") {
+                window.location.href = "saeiss.html";
+            } else if (uid === "55110") {
+                window.location.href = "silentpredators.html";
+            } else if (uid === "76395") {
+                window.location.href = "epta.html";
+            } else if (uid === "11619") {
+                window.location.href = "rogue.html";
+            } else if (uid === "19117") {
+                window.location.href = "ritamyagami.html";
+            } else if (uid === "97814") {
+                window.location.href = "squirera.html";
+            } else if (uid === "16779") {
+                window.location.href = "ateam.html";
+            } else if (uid === "68832") {
+                window.location.href = "alphawealth.html";
+            } else if (uid === "13260") {
+                window.location.href = "cookedweed.html";
+            } else if (uid === "50759") {
+                window.location.href = "asquare.html";
+            } else if (uid === "66783") {
+                window.location.href = "fscxjgu1.html";
+            } else if (uid === "52072") {
+                window.location.href = "alphas.html";
+            } else if (uid === "10984") {
+                window.location.href = "juicepilado.html";
+            } else if (uid === "66184") {
+                window.location.href = "bearstearns.html";
+            } else if (uid === "11131") {
+                window.location.href = "spartan.html";
+            } else if (uid === "73863") {
+                window.location.href = "nextgenmavricks.html";
+            } else if (uid === "12655") {
+                window.location.href = "nommists.html";
+            } else if (uid === "36830") {
+                window.location.href = "titans.html";
+            } else if (uid === "52845") {
+                window.location.href = "xyz.html";
+            } else if (uid === "31796") {
+                window.location.href = "abc.html";
+            } else if (uid === "46878") {
+                window.location.href = "mece.html";
+            } else {
+                errorMsg.textContent = "Invalid UID! Please enter a valid participant ID.";
+            }
+
+
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("uid").addEventListener("keypress", function(event) {
+                if (event.key === "Enter") {
+                    login();
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>AWIFS Login Code</h2>
+        <input type="text" id="uid" placeholder="Enter Login Code">
+        <button onclick="login()">Login</button>
+        <p id="error-msg" class="error"></p>
+    </div>
+
+</body>
+</html>
