@@ -2,23 +2,41 @@ import { supabase, supabaseAdmin } from '../supabase/client'
 import { recalculateAllPortfolios } from './portfolioService'
 
 // Creates a Supabase Auth user + teams row using the service role key.
-// Bypasses email confirmation and rate limits entirely.
+// If the auth user already exists (e.g. team was deleted but auth user wasn't),
+// reuses their UID and resets their password.
 export async function createTeamAccount({ teamName, email, password, cashBalance = 100000 }) {
   if (!supabaseAdmin) throw new Error('Service role key missing — add VITE_SUPABASE_SERVICE_KEY to .env (Supabase → Settings → API → service_role)')
 
-  // 1. Create auth user via admin API (no email sent, no rate limit)
+  let uid
+
+  // 1. Try to create auth user
   const { data, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
   })
-  if (signUpError) throw new Error(signUpError.message)
 
-  const uid = data.user?.id
-  if (!uid) throw new Error('User created but UID not returned')
+  if (signUpError) {
+    const msg = signUpError.message.toLowerCase()
+    if (msg.includes('already registered') || msg.includes('already been registered') || msg.includes('already exists')) {
+      // Auth user exists but team row was deleted — find their UID and reset password
+      const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+      if (listError) throw new Error(listError.message)
+      const existing = listData?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase())
+      if (!existing) throw new Error('User exists in auth but could not be located — contact support')
+      uid = existing.id
+      // Reset their password to the new one
+      await supabaseAdmin.auth.admin.updateUserById(uid, { password })
+    } else {
+      throw new Error(signUpError.message)
+    }
+  } else {
+    uid = data.user?.id
+    if (!uid) throw new Error('User created but UID not returned')
+  }
 
-  // 2. Insert into teams table (admin client bypasses RLS)
-  const { error: teamError } = await supabaseAdmin.from('teams').insert({
+  // 2. Upsert teams row (handles both new teams and re-created ones)
+  const { error: teamError } = await supabaseAdmin.from('teams').upsert({
     id: uid,
     team_name: teamName.trim(),
     email,
