@@ -1,0 +1,235 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background-color: #080d18;
+  color: #e2e8f4;
+  font-family: 'Roboto', sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #0e1524; }
+::-webkit-scrollbar-thumb { background: #2a3a55; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #4a6080; }
+
+/* ── News Ticker ── */
+.ticker-wrapper { overflow: hidden; white-space: nowrap; }
+.ticker-content {
+  display: inline-block;
+  animation: ticker 50s linear infinite;
+}
+.ticker-content:hover { animation-play-state: paused; }
+@keyframes ticker {
+  0%   { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}
+
+/* ── Price colours ── */
+.price-up      { color: #4ade80; }
+.price-down    { color: #f87171; }
+.price-neutral { color: #94a3b8; }
+
+/* ── Card ── */
+.card {
+  background: #0e1524;
+  border: 1px solid #1a2740;
+  border-radius: 10px;
+}
+
+/* ── Sidebar nav item ── */
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.18s;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #64748b;
+  border-left: 3px solid transparent;
+  width: 100%;
+  text-align: left;
+}
+.sidebar-item:hover  { background: #111d30; color: #cbd5e1; }
+.sidebar-item.active { background: #13213b; color: #ffffff; border-left-color: #ffffff; }
+
+/* ── Buttons ── */
+.btn-primary {
+  background: #ffffff;
+  color: #0b0f1a;
+  font-weight: 700;
+  padding: 9px 22px;
+  border-radius: 7px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s;
+  font-size: 13.5px;
+  letter-spacing: 0.01em;
+}
+.btn-primary:hover    { filter: brightness(0.92); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(255,255,255,0.12); }
+.btn-primary:disabled { opacity: 0.38; cursor: not-allowed; transform: none; filter: none; box-shadow: none; }
+
+.btn-secondary {
+  background: transparent;
+  color: #94a3b8;
+  font-weight: 600;
+  padding: 9px 22px;
+  border-radius: 7px;
+  border: 1px solid #2a3a55;
+  cursor: pointer;
+  transition: all 0.18s;
+  font-size: 13.5px;
+}
+.btn-secondary:hover    { border-color: #94a3b8; color: #e2e8f4; background: rgba(255,255,255,0.04); }
+.btn-secondary:disabled { opacity: 0.38; cursor: not-allowed; }
+
+.btn-ghost {
+  background: transparent;
+  color: #64748b;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: 7px;
+  border: 1px solid #1a2740;
+  cursor: pointer;
+  transition: all 0.18s;
+  font-size: 12.5px;
+}
+.btn-ghost:hover { background: #111d30; color: #94a3b8; border-color: #2a3a55; }
+
+.btn-danger {
+  background: rgba(239,68,68,0.12);
+  color: #f87171;
+  font-weight: 600;
+  padding: 9px 22px;
+  border-radius: 7px;
+  border: 1px solid rgba(239,68,68,0.25);
+  cursor: pointer;
+  transition: all 0.18s;
+  font-size: 13.5px;
+}
+.btn-danger:hover    { background: rgba(239,68,68,0.2); }
+.btn-danger:disabled { opacity: 0.38; cursor: not-allowed; }
+
+/* ── Input ── */
+.input-field {
+  background: #080d18;
+  border: 1px solid #1a2740;
+  border-radius: 7px;
+  padding: 10px 14px;
+  color: #e2e8f4;
+  font-size: 13.5px;
+  width: 100%;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  outline: none;
+}
+.input-field:focus {
+  border-color: #4a6080;
+  box-shadow: 0 0 0 3px rgba(74,96,128,0.18);
+}
+.input-field::placeholder { color: #2a3a55; }
+select.input-field { cursor: pointer; }
+
+/* ── Table ── */
+.table-header {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #475569;
+  padding: 11px 18px;
+  background: #0a1020;
+  border-bottom: 1px solid #1a2740;
+}
+.table-row {
+  padding: 13px 18px;
+  border-bottom: 1px solid #0e1830;
+  transition: background 0.12s;
+}
+.table-row:hover      { background: rgba(255,255,255,0.02); }
+.table-row:last-child { border-bottom: none; }
+
+/* ── Badges ── */
+.badge {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: inline-block;
+}
+.badge-active  { background: rgba(74,222,128,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.2); }
+.badge-paused  { background: rgba(251,191,36,0.12);  color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
+.badge-ended   { background: rgba(248,113,113,0.12); color: #f87171; border: 1px solid rgba(248,113,113,0.2); }
+.badge-waiting { background: rgba(100,116,139,0.12); color: #64748b; border: 1px solid rgba(100,116,139,0.2); }
+
+/* ── Stat card ── */
+.stat-card {
+  background: #0e1524;
+  border: 1px solid #1a2740;
+  border-radius: 10px;
+  padding: 20px 22px;
+}
+.stat-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #475569;
+  margin-bottom: 8px;
+}
+.stat-value {
+  font-family: 'Roboto Mono', 'Roboto', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: #e2e8f4;
+  line-height: 1.2;
+}
+
+/* ── Divider ── */
+.divider { border: none; border-top: 1px solid #1a2740; }
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.25s ease-out; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+}
+.live-dot {
+  width: 7px; height: 7px;
+  background: #4ade80;
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* ── Modal overlay ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
+}
+.modal-box {
+  background: #0e1524;
+  border: 1px solid #1a2740;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+  padding: 28px;
+  animation: fadeUp 0.2s ease-out;
+}

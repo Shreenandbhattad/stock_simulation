@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.env.local
+.claude/
+firebase.json
+firestore.indexes.json
+firestore.rules
