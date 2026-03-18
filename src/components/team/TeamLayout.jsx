@@ -51,7 +51,7 @@ export default function TeamLayout() {
 
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 18px 16px', borderBottom: '1px solid #1a2740' }}>
-          <img src="/logo.png" alt="AWIFS" style={{ width: 34, height: 34, borderRadius: '50%' }} />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="AWIFS" style={{ width: 34, height: 34, borderRadius: '50%' }} />
           <span style={{ fontFamily: "'Bebas Neue', cursive", fontSize: 20, letterSpacing: '0.2em', color: '#e2e8f4' }}>AWIFS</span>
         </div>
 

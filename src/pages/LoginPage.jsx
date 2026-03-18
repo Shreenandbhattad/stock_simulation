@@ -54,7 +54,7 @@ export default function LoginPage() {
           <div className="relative inline-block mb-5">
             <div className="absolute inset-0 rounded-full blur-2xl opacity-30" style={{ background: '#ffffff' }} />
             <img
-              src="/logo.png"
+              src={`${import.meta.env.BASE_URL}logo.png`}
               alt="AWIFS"
               className="relative w-24 h-24 rounded-full"
               style={{ border: '1.5px solid rgba(255,255,255,0.35)', boxShadow: '0 0 30px rgba(255,255,255,0.12)' }}

@@ -41,7 +41,7 @@ export default function AdminLayout() {
       }}>
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '18px 18px', borderBottom: '1px solid #1a2740' }}>
-          <img src="/logo.png" alt="AWIFS" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="AWIFS" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
           <div>
             <div style={{ fontSize: 17, fontWeight: 800, color: '#e2e8f4', letterSpacing: '0.12em' }}>AWIFS</div>
             <div style={{ fontSize: 9.5, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Admin Panel</div>
