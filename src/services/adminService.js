@@ -178,8 +178,20 @@ export async function updateTeam(uid, { teamName, cashBalance }) {
 }
 
 export async function deleteTeam(uid) {
-  const { error } = await supabase.from('teams').delete().eq('id', uid)
-  if (error) throw new Error(error.message)
+  // 1. Delete this team's transactions first (FK: transactions.team_id → teams.id)
+  const client = supabaseAdmin || supabase
+  const { error: txError } = await client.from('transactions').delete().eq('team_id', uid)
+  if (txError) throw new Error(txError.message)
+
+  // 2. Delete the teams row
+  const { error: teamError } = await client.from('teams').delete().eq('id', uid)
+  if (teamError) throw new Error(teamError.message)
+
+  // 3. Delete the auth user (requires service role key)
+  if (supabaseAdmin) {
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(uid)
+    if (authError) throw new Error(authError.message)
+  }
 }
 
 // Timer operations use DATABASE server clock via RPC to avoid client clock skew.
