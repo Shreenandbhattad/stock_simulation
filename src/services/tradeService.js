@@ -6,19 +6,15 @@ export async function buyStock({ teamId, symbol, quantity }) {
     throw new Error('Quantity must be a positive whole number')
   }
 
-  const { data, error } = await supabase.rpc('execute_trade', {
-    p_team_id: teamId,
-    p_symbol: symbol,
+  const { error } = await supabase.rpc('execute_trade', {
+    p_team_id:  teamId,
+    p_symbol:   symbol,
     p_quantity: qty,
-    p_type: 'buy',
+    p_type:     'buy',
   })
 
   if (error) throw new Error(error.message)
-
-  // Trigger portfolio recalculation
-  await supabase.rpc('recalculate_portfolio', { p_team_id: teamId })
-
-  return data
+  // execute_trade calls recalculate_all_portfolios internally after every trade
 }
 
 export async function sellStock({ teamId, symbol, quantity }) {
@@ -27,16 +23,12 @@ export async function sellStock({ teamId, symbol, quantity }) {
     throw new Error('Quantity must be a positive whole number')
   }
 
-  const { data, error } = await supabase.rpc('execute_trade', {
-    p_team_id: teamId,
-    p_symbol: symbol,
+  const { error } = await supabase.rpc('execute_trade', {
+    p_team_id:  teamId,
+    p_symbol:   symbol,
     p_quantity: qty,
-    p_type: 'sell',
+    p_type:     'sell',
   })
 
   if (error) throw new Error(error.message)
-
-  await supabase.rpc('recalculate_portfolio', { p_team_id: teamId })
-
-  return data
 }
