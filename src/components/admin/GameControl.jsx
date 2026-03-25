@@ -66,13 +66,9 @@ export default function GameControl() {
     if (secondsLeft === 0 && gameState?.trading_enabled && !autoPausedRef.current) {
       autoPausedRef.current = true
       const roundNum = gameState.round_number
-      const alreadyApplied = (gameState?.price_applied_round || 0) >= roundNum
-      setGameState({
-        status: 'paused', tradingEnabled: false, roundNumber: roundNum,
-        roundEndTime: null, timerPausedRemaining: 0,
-      })
-        .then(() => alreadyApplied ? null : applyRoundNewsEffects(roundNum))
-        .then(() => toast.success('⏱ Time up — round ended, prices updated!'))
+      setGameState({ status: 'paused', tradingEnabled: false, roundNumber: roundNum, roundEndTime: null, timerPausedRemaining: 0 })
+        .then(() => applyRoundNewsEffects(roundNum))
+        .then((changed) => toast.success(`⏱ Round ${roundNum} over — ${changed} price${changed !== 1 ? 's' : ''} updated`))
         .catch(err => toast.error(err.message))
     }
     if (secondsLeft > 0) autoPausedRef.current = false
@@ -93,11 +89,10 @@ export default function GameControl() {
           const next    = (current.round_number || 0) + 1
           const durMins = durations[next - 1] ?? 10
 
-          // Safety net: apply deferred price effects for the round that just ended
-          // (in case timer was manually stopped before hitting 0)
+          // Apply price effects from the round that just ended (safe to call multiple times)
           if (current.round_number > 0) {
-            const alreadyApplied = (gameState?.price_applied_round || 0) >= current.round_number
-            if (!alreadyApplied) await applyRoundNewsEffects(current.round_number)
+            const changed = await applyRoundNewsEffects(current.round_number)
+            if (changed > 0) toast.success(`Round ${current.round_number} prices applied — ${changed} stock${changed > 1 ? 's' : ''} updated`)
           }
 
           await setGameState({ status: 'active', tradingEnabled: true, roundNumber: next, timerPausedRemaining: null })
@@ -139,9 +134,7 @@ export default function GameControl() {
           break
 
         case 'end': {
-          // Apply deferred price effects for the final round before ending
-          const alreadyApplied = (gameState?.price_applied_round || 0) >= current.round_number
-          if (!alreadyApplied && current.round_number > 0) await applyRoundNewsEffects(current.round_number)
+          if (current.round_number > 0) await applyRoundNewsEffects(current.round_number)
           await setGameState({ status: 'ended', tradingEnabled: false, roundNumber: current.round_number, roundEndTime: null, timerPausedRemaining: null })
           toast.success('Game ended — final prices updated, leaderboard is live!')
           break

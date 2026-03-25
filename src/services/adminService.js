@@ -150,11 +150,12 @@ export async function publishNews({ headline, body, round, affectedStocks }) {
 // Applies the deferred price effects from all news items published in a given round.
 // Call this when a round ends (timer hits 0, game ends, or next round starts).
 // Idempotent: tracks the last applied round in game_state.price_applied_round.
+// Returns count of stock prices updated. Safe to call multiple times — DB marks each
+// news item as applied so it is never double-applied.
 export async function applyRoundNewsEffects(roundNumber) {
-  // Runs entirely in the DB via SECURITY DEFINER — bypasses RLS, no JS parsing issues
-  const { error } = await supabase.rpc('apply_news_price_effects', { p_round: roundNumber })
+  const { data: count, error } = await supabase.rpc('apply_news_price_effects', { p_round: roundNumber })
   if (error) throw new Error(error.message)
-  try { await setGameState({ priceAppliedRound: roundNumber }) } catch (_) {}
+  return Number(count) || 0
 }
 
 export async function createTeam({ email, uid, teamName, cashBalance = 100000 }) {
