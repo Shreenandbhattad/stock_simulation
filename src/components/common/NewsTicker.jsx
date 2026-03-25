@@ -5,6 +5,11 @@ export default function NewsTicker() {
   const { news } = useNews(10)
   const { gameState } = useGameState()
 
+  const currentRound = gameState?.round_number || 0
+  const currentNews = currentRound > 0
+    ? news.filter(n => n.round === currentRound)
+    : news
+
   const S = {
     bar: { height: 54, background: '#060b14', borderTop: '1px solid #1a2740', display: 'flex', alignItems: 'center', overflow: 'hidden', flexShrink: 0 },
     live: { flexShrink: 0, background: '#ffffff', color: '#0b0f1a', fontSize: 15, fontWeight: 800, padding: '0 18px', height: '100%', display: 'flex', alignItems: 'center', letterSpacing: '0.14em' },
@@ -14,7 +19,7 @@ export default function NewsTicker() {
     empty: { padding: '0 20px', fontSize: 17, color: '#2a3a55', fontStyle: 'italic' },
   }
 
-  if (!news.length) {
+  if (!currentNews.length) {
     return (
       <div style={S.bar}>
         <div style={S.live}><span style={S.dot} />LIVE</div>
@@ -24,8 +29,8 @@ export default function NewsTicker() {
     )
   }
 
-  const text = news
-    .map((n) => `R${n.round}  |  ${n.headline}`)
+  const text = currentNews
+    .map((n) => n.headline)
     .join('          ◆          ')
 
   return (
