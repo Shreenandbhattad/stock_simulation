@@ -151,50 +151,9 @@ export async function publishNews({ headline, body, round, affectedStocks }) {
 // Call this when a round ends (timer hits 0, game ends, or next round starts).
 // Idempotent: tracks the last applied round in game_state.price_applied_round.
 export async function applyRoundNewsEffects(roundNumber) {
-  const client = supabaseAdmin || supabase
-
-  const { data: newsItems, error } = await client
-    .from('news').select('affected_stocks').eq('round', roundNumber)
+  // Runs entirely in the DB via SECURITY DEFINER — bypasses RLS, no JS parsing issues
+  const { error } = await supabase.rpc('apply_news_price_effects', { p_round: roundNumber })
   if (error) throw new Error(error.message)
-
-  if (!newsItems?.length) {
-    try { await setGameState({ priceAppliedRound: roundNumber }) } catch (_) {}
-    return
-  }
-
-  for (const item of newsItems) {
-    // affected_stocks may be a parsed array (JSONB) or a JSON string
-    let impacts = item.affected_stocks
-    if (typeof impacts === 'string') {
-      try { impacts = JSON.parse(impacts) } catch { impacts = [] }
-    }
-    if (!Array.isArray(impacts)) continue
-
-    for (const impact of impacts) {
-      const symbol    = impact?.symbol
-      const changePct = Number(impact?.changePercent ?? impact?.change_percent ?? 0)
-      if (!symbol || isNaN(changePct) || changePct === 0) continue
-
-      const { data: stock, error: sErr } = await client
-        .from('stocks').select('current_price').eq('symbol', symbol).single()
-      if (sErr || !stock) continue
-
-      const prev     = stock.current_price
-      const newPrice = Math.max(1, Math.round(prev * (1 + changePct / 100) * 100) / 100)
-
-      const { error: uErr } = await client.from('stocks').update({
-        previous_price:       prev,
-        current_price:        newPrice,
-        price_change_percent: changePct,
-        updated_at:           new Date().toISOString(),
-      }).eq('symbol', symbol)
-
-      if (uErr) throw new Error(`Failed to update ${symbol}: ${uErr.message}`)
-    }
-  }
-
-  await recalculateAllPortfolios()
-
   try { await setGameState({ priceAppliedRound: roundNumber }) } catch (_) {}
 }
 
@@ -299,6 +258,7 @@ export async function restartGame(cashBalance = 100000) {
     round_number: 0,
     round_end_time: null,
     timer_paused_remaining: null,
+    price_applied_round: 0,
     updated_at: new Date().toISOString(),
   }).eq('id', 'current')
   if (gsError) throw new Error(gsError.message)
