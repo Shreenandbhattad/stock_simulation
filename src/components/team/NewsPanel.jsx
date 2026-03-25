@@ -23,24 +23,6 @@ export default function NewsPanel() {
                 <span className="badge badge-active" style={{ flexShrink: 0, fontSize: 10 }}>Round {item.round}</span>
               </div>
               {item.body && <p style={{ fontSize: 12.5, color: '#64748b', marginBottom: 10, lineHeight: 1.55 }}>{item.body}</p>}
-              {item.affected_stocks?.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 6 }}>
-                  <span style={{ fontSize: 11, color: '#475569', alignSelf: 'center' }}>Stocks in play:</span>
-                  {item.affected_stocks.map((s) => (
-                    <span
-                      key={s.symbol}
-                      style={{
-                        fontSize: 11, fontFamily: 'monospace', fontWeight: 700, padding: '3px 10px', borderRadius: 20,
-                        background: 'rgba(148,163,184,0.08)',
-                        color: '#94a3b8',
-                        border: '1px solid rgba(148,163,184,0.15)',
-                      }}
-                    >
-                      {s.symbol}
-                    </span>
-                  ))}
-                </div>
-              )}
               {item.published_at && (
                 <div style={{ fontSize: 11, color: '#2a3a55', marginTop: 10 }}>
                   {new Date(item.published_at).toLocaleString('en-IN')}
