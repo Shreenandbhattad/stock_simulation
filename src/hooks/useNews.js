@@ -1,25 +1,28 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase/client'
 
 export function useNews(maxItems = 50) {
-  const [news, setNews] = useState([])
+  const [news, setNews]       = useState([])
   const [loading, setLoading] = useState(true)
-
-  const fetch = () =>
-    supabase.from('news').select('*').order('published_at', { ascending: false }).limit(maxItems)
-      .then(({ data }) => { setNews(data || []); setLoading(false) })
+  const channelId = useRef(`news_${Math.random()}`)
 
   useEffect(() => {
-    fetch()
+    let mounted = true
+
+    async function refetch() {
+      const { data } = await supabase
+        .from('news').select('*').order('published_at', { ascending: false }).limit(maxItems)
+      if (mounted) { setNews(data || []); setLoading(false) }
+    }
+
+    refetch()
 
     const channel = supabase
-      .channel('news')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'news' }, fetch)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'news' }, fetch)
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'news' }, fetch)
+      .channel(channelId.current)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'news' }, refetch)
       .subscribe()
 
-    return () => supabase.removeChannel(channel)
+    return () => { mounted = false; supabase.removeChannel(channel) }
   }, [maxItems])
 
   return { news, loading }

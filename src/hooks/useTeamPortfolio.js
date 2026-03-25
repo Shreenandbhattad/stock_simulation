@@ -1,27 +1,33 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase/client'
 
 export function useTeamPortfolio(uid) {
   const [portfolio, setPortfolio] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading]     = useState(true)
+  const channelId = useRef(`team_portfolio_${Math.random()}`)
 
   useEffect(() => {
     if (!uid) { setLoading(false); return }
 
-    // Initial fetch
-    supabase.from('teams').select('*').eq('id', uid).single()
-      .then(({ data }) => { setPortfolio(data); setLoading(false) })
+    let mounted = true
 
-    // Real-time — re-fetch on any change to this team's row
+    async function refetch() {
+      const { data } = await supabase
+        .from('teams').select('*').eq('id', uid).single()
+      if (mounted) { setPortfolio(data); setLoading(false) }
+    }
+
+    refetch()
+
     const channel = supabase
-      .channel(`team-${uid}`)
+      .channel(channelId.current)
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'teams', filter: `id=eq.${uid}` },
-        ({ new: row }) => setPortfolio(row)
+        refetch
       )
       .subscribe()
 
-    return () => supabase.removeChannel(channel)
+    return () => { mounted = false; supabase.removeChannel(channel) }
   }, [uid])
 
   return { portfolio, loading }

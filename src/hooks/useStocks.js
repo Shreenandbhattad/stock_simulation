@@ -1,28 +1,28 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase/client'
 
 export function useStocks() {
-  const [stocks, setStocks] = useState([])
+  const [stocks, setStocks]   = useState([])
   const [loading, setLoading] = useState(true)
+  const channelId = useRef(`stocks_${Math.random()}`)
 
   useEffect(() => {
-    // Initial fetch
-    supabase.from('stocks').select('*').eq('is_active', true).order('symbol')
-      .then(({ data }) => { setStocks(data || []); setLoading(false) })
+    let mounted = true
 
-    // Real-time
+    async function refetch() {
+      const { data } = await supabase
+        .from('stocks').select('*').eq('is_active', true).order('symbol')
+      if (mounted) { setStocks(data || []); setLoading(false) }
+    }
+
+    refetch()
+
     const channel = supabase
-      .channel('stocks')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'stocks' },
-        () => {
-          supabase.from('stocks').select('*').eq('is_active', true).order('symbol')
-            .then(({ data }) => setStocks(data || []))
-        }
-      )
+      .channel(channelId.current)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'stocks' }, refetch)
       .subscribe()
 
-    return () => supabase.removeChannel(channel)
+    return () => { mounted = false; supabase.removeChannel(channel) }
   }, [])
 
   return { stocks, loading }
