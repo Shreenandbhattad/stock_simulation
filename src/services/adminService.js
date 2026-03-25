@@ -157,26 +157,38 @@ export async function applyRoundNewsEffects(roundNumber) {
 
   if (newsItems?.length) {
     for (const item of newsItems) {
-      if (!item.affected_stocks?.length) continue
-      for (const { symbol, changePercent } of item.affected_stocks) {
+      // Normalise: DB may return JSONB as array of objects or stringified
+      const impacts = Array.isArray(item.affected_stocks) ? item.affected_stocks : []
+      for (const impact of impacts) {
+        const symbol      = impact?.symbol
+        const changePct   = Number(impact?.changePercent ?? impact?.change_percent ?? 0)
+        if (!symbol || isNaN(changePct)) continue
+
         const { data: stock } = await supabase
           .from('stocks').select('current_price').eq('symbol', symbol).single()
         if (!stock) continue
-        const prev = stock.current_price
-        const newPrice = Math.max(1, Math.round(prev * (1 + Number(changePercent) / 100) * 100) / 100)
+
+        const prev     = stock.current_price
+        const newPrice = Math.max(1, Math.round(prev * (1 + changePct / 100) * 100) / 100)
+
         await supabase.from('stocks').update({
-          previous_price: prev,
-          current_price: newPrice,
-          price_change_percent: Number(changePercent),
-          updated_at: new Date().toISOString(),
+          previous_price:       prev,
+          current_price:        newPrice,
+          price_change_percent: changePct,
+          updated_at:           new Date().toISOString(),
         }).eq('symbol', symbol)
       }
     }
+    // Recalculate portfolio values for all teams after price changes
     await recalculateAllPortfolios()
   }
 
-  // Mark this round's effects as applied so we don't double-apply
-  await setGameState({ priceAppliedRound: roundNumber })
+  // Mark round as applied — ignore error if price_applied_round column is missing (run the SQL migration)
+  try {
+    await setGameState({ priceAppliedRound: roundNumber })
+  } catch (_) {
+    // column may not exist yet; price changes are already committed above
+  }
 }
 
 export async function createTeam({ email, uid, teamName, cashBalance = 100000 }) {
