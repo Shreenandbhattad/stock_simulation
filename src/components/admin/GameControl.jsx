@@ -36,7 +36,8 @@ export default function GameControl() {
   const [durationsLoaded, setDurationsLoaded] = useState(false)
   const [schedNews, setSchedNews]         = useState([])    // pre-scheduled news items
   const [schedLoaded, setSchedLoaded]     = useState(false)
-  const autoPausedRef = useRef(false)
+  const autoPausedRef    = useRef(false)
+  const appliedRoundsRef = useRef(new Set()) // tracks which rounds had prices applied this session
 
   // Load saved durations from DB on first load
   useEffect(() => {
@@ -67,12 +68,21 @@ export default function GameControl() {
       autoPausedRef.current = true
       const roundNum = gameState.round_number
       setGameState({ status: 'paused', tradingEnabled: false, roundNumber: roundNum, roundEndTime: null, timerPausedRemaining: 0 })
-        .then(() => applyRoundNewsEffects(roundNum))
+        .then(() => applyPrices(roundNum))
         .then((changed) => toast.success(`⏱ Round ${roundNum} over — ${changed} price${changed !== 1 ? 's' : ''} updated`))
         .catch(err => toast.error(err.message))
     }
     if (secondsLeft > 0) autoPausedRef.current = false
   }, [secondsLeft, gameState?.trading_enabled, gameState?.round_number])
+
+  // Apply price effects for a round exactly once per session
+  async function applyPrices(roundNum) {
+    if (appliedRoundsRef.current.has(roundNum)) return 0
+    const schedule = gameState?.scheduled_news || []
+    const changed = await applyRoundNewsEffects(roundNum, schedule)
+    appliedRoundsRef.current.add(roundNum)
+    return changed
+  }
 
   async function handleAction(action) {
     setSaving(true)
@@ -89,9 +99,8 @@ export default function GameControl() {
           const next    = (current.round_number || 0) + 1
           const durMins = durations[next - 1] ?? 10
 
-          // Apply price effects from the round that just ended (safe to call multiple times)
           if (current.round_number > 0) {
-            const changed = await applyRoundNewsEffects(current.round_number)
+            const changed = await applyPrices(current.round_number)
             if (changed > 0) toast.success(`Round ${current.round_number} prices applied — ${changed} stock${changed > 1 ? 's' : ''} updated`)
           }
 
@@ -134,7 +143,7 @@ export default function GameControl() {
           break
 
         case 'end': {
-          if (current.round_number > 0) await applyRoundNewsEffects(current.round_number)
+          if (current.round_number > 0) await applyPrices(current.round_number)
           await setGameState({ status: 'ended', tradingEnabled: false, roundNumber: current.round_number, roundEndTime: null, timerPausedRemaining: null })
           toast.success('Game ended — final prices updated, leaderboard is live!')
           break

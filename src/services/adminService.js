@@ -150,12 +150,41 @@ export async function publishNews({ headline, body, round, affectedStocks }) {
 // Applies the deferred price effects from all news items published in a given round.
 // Call this when a round ends (timer hits 0, game ends, or next round starts).
 // Idempotent: tracks the last applied round in game_state.price_applied_round.
-// Returns count of stock prices updated. Safe to call multiple times — DB marks each
-// news item as applied so it is never double-applied.
-export async function applyRoundNewsEffects(roundNumber) {
-  const { data: count, error } = await supabase.rpc('apply_news_price_effects', { p_round: roundNumber })
-  if (error) throw new Error(error.message)
-  return Number(count) || 0
+// Applies scheduled price changes for a completed round.
+// Reads directly from savedSchedule (game_state.scheduled_news) — no SQL function needed.
+// Returns the number of stocks whose price was updated.
+export async function applyRoundNewsEffects(roundNumber, savedSchedule = []) {
+  const client = supabaseAdmin || supabase
+  const items = savedSchedule.filter(n => Number(n.round) === roundNumber)
+  let count = 0
+
+  for (const item of items) {
+    for (const s of (item.stocks || [])) {
+      const sym = (s.symbol || '').trim().toUpperCase()
+      const pct = Number(s.changePercent)
+      if (!sym || isNaN(pct) || pct === 0) continue
+
+      const { data: stock, error: fetchErr } = await client
+        .from('stocks').select('current_price').eq('symbol', sym).single()
+      if (fetchErr || !stock) continue
+
+      const prev     = stock.current_price
+      const newPrice = Math.max(1, Math.round(prev * (1 + pct / 100) * 100) / 100)
+
+      const { error: updErr } = await client.from('stocks').update({
+        previous_price:       prev,
+        current_price:        newPrice,
+        price_change_percent: pct,
+        updated_at:           new Date().toISOString(),
+      }).eq('symbol', sym)
+
+      if (updErr) throw new Error(`Could not update ${sym}: ${updErr.message}`)
+      count++
+    }
+  }
+
+  if (count > 0) await recalculateAllPortfolios()
+  return count
 }
 
 export async function createTeam({ email, uid, teamName, cashBalance = 100000 }) {
