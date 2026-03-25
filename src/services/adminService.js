@@ -151,44 +151,51 @@ export async function publishNews({ headline, body, round, affectedStocks }) {
 // Call this when a round ends (timer hits 0, game ends, or next round starts).
 // Idempotent: tracks the last applied round in game_state.price_applied_round.
 export async function applyRoundNewsEffects(roundNumber) {
-  const { data: newsItems, error } = await supabase
+  const client = supabaseAdmin || supabase
+
+  const { data: newsItems, error } = await client
     .from('news').select('affected_stocks').eq('round', roundNumber)
   if (error) throw new Error(error.message)
 
-  if (newsItems?.length) {
-    for (const item of newsItems) {
-      // Normalise: DB may return JSONB as array of objects or stringified
-      const impacts = Array.isArray(item.affected_stocks) ? item.affected_stocks : []
-      for (const impact of impacts) {
-        const symbol      = impact?.symbol
-        const changePct   = Number(impact?.changePercent ?? impact?.change_percent ?? 0)
-        if (!symbol || isNaN(changePct)) continue
+  if (!newsItems?.length) {
+    try { await setGameState({ priceAppliedRound: roundNumber }) } catch (_) {}
+    return
+  }
 
-        const { data: stock } = await supabase
-          .from('stocks').select('current_price').eq('symbol', symbol).single()
-        if (!stock) continue
-
-        const prev     = stock.current_price
-        const newPrice = Math.max(1, Math.round(prev * (1 + changePct / 100) * 100) / 100)
-
-        await supabase.from('stocks').update({
-          previous_price:       prev,
-          current_price:        newPrice,
-          price_change_percent: changePct,
-          updated_at:           new Date().toISOString(),
-        }).eq('symbol', symbol)
-      }
+  for (const item of newsItems) {
+    // affected_stocks may be a parsed array (JSONB) or a JSON string
+    let impacts = item.affected_stocks
+    if (typeof impacts === 'string') {
+      try { impacts = JSON.parse(impacts) } catch { impacts = [] }
     }
-    // Recalculate portfolio values for all teams after price changes
-    await recalculateAllPortfolios()
+    if (!Array.isArray(impacts)) continue
+
+    for (const impact of impacts) {
+      const symbol    = impact?.symbol
+      const changePct = Number(impact?.changePercent ?? impact?.change_percent ?? 0)
+      if (!symbol || isNaN(changePct) || changePct === 0) continue
+
+      const { data: stock, error: sErr } = await client
+        .from('stocks').select('current_price').eq('symbol', symbol).single()
+      if (sErr || !stock) continue
+
+      const prev     = stock.current_price
+      const newPrice = Math.max(1, Math.round(prev * (1 + changePct / 100) * 100) / 100)
+
+      const { error: uErr } = await client.from('stocks').update({
+        previous_price:       prev,
+        current_price:        newPrice,
+        price_change_percent: changePct,
+        updated_at:           new Date().toISOString(),
+      }).eq('symbol', symbol)
+
+      if (uErr) throw new Error(`Failed to update ${symbol}: ${uErr.message}`)
+    }
   }
 
-  // Mark round as applied — ignore error if price_applied_round column is missing (run the SQL migration)
-  try {
-    await setGameState({ priceAppliedRound: roundNumber })
-  } catch (_) {
-    // column may not exist yet; price changes are already committed above
-  }
+  await recalculateAllPortfolios()
+
+  try { await setGameState({ priceAppliedRound: roundNumber }) } catch (_) {}
 }
 
 export async function createTeam({ email, uid, teamName, cashBalance = 100000 }) {
