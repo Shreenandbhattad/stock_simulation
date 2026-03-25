@@ -1,9 +1,7 @@
-import { useNews } from '../../hooks/useNews'
-import { useGameState } from '../../hooks/useGameState'
+import { useGameContext } from '../../contexts/GameContext'
 
 export default function NewsTicker() {
-  const { news } = useNews(10)
-  const { gameState } = useGameState()
+  const { news, gameState } = useGameContext()
 
   const currentRound = gameState?.round_number || 0
   const currentNews = currentRound > 0

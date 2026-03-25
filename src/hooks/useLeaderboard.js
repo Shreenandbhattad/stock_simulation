@@ -8,6 +8,7 @@ export function useLeaderboard() {
 
   useEffect(() => {
     let mounted = true
+    let debounceTimer = null
 
     async function refetch() {
       const { data } = await supabase
@@ -19,14 +20,24 @@ export function useLeaderboard() {
       }
     }
 
-    refetch()
+    // Debounced version — collapses bursts of updates (mass trading) into one refetch
+    function debouncedRefetch() {
+      clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(refetch, 400)
+    }
+
+    refetch() // immediate on mount
 
     const channel = supabase
       .channel(channelId.current)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, refetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, debouncedRefetch)
       .subscribe()
 
-    return () => { mounted = false; supabase.removeChannel(channel) }
+    return () => {
+      mounted = false
+      clearTimeout(debounceTimer)
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   return { leaderboard, loading }

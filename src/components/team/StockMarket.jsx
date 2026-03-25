@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { useStocks } from '../../hooks/useStocks'
-import { useGameState } from '../../hooks/useGameState'
+import { useGameContext } from '../../contexts/GameContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTeamPortfolio } from '../../hooks/useTeamPortfolio'
 import LoadingSpinner from '../common/LoadingSpinner'
@@ -8,8 +7,7 @@ import PriceTag from '../common/PriceTag'
 import TradeModal from './TradeModal'
 
 export default function StockMarket() {
-  const { stocks, loading } = useStocks()
-  const { gameState }       = useGameState()
+  const { stocks, loading, gameState } = useGameContext()
   const { user }            = useAuth()
   const { portfolio }       = useTeamPortfolio(user?.id)
   const [modal, setModal]   = useState(null)

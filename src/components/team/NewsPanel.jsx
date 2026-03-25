@@ -1,8 +1,8 @@
-import { useNews } from '../../hooks/useNews'
+import { useGameContext } from '../../contexts/GameContext'
 import LoadingSpinner from '../common/LoadingSpinner'
 
 export default function NewsPanel() {
-  const { news, loading } = useNews(50)
+  const { news, loading } = useGameContext()
   if (loading) return <LoadingSpinner />
 
   return (

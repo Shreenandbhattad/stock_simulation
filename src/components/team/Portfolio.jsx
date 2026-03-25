@@ -1,6 +1,6 @@
 import { useAuth } from '../../contexts/AuthContext'
 import { useTeamPortfolio } from '../../hooks/useTeamPortfolio'
-import { useStocks } from '../../hooks/useStocks'
+import { useGameContext } from '../../contexts/GameContext'
 import LoadingSpinner from '../common/LoadingSpinner'
 import PriceTag from '../common/PriceTag'
 
@@ -16,9 +16,9 @@ function StatCard({ label, value, accent }) {
 export default function Portfolio() {
   const { user } = useAuth()
   const { portfolio, loading: pLoading } = useTeamPortfolio(user?.id)
-  const { stocks,    loading: sLoading } = useStocks()
+  const { stocks } = useGameContext()
 
-  if (pLoading || sLoading) return <LoadingSpinner />
+  if (pLoading) return <LoadingSpinner />
 
   const stockMap      = Object.fromEntries(stocks.map((s) => [s.symbol, s]))
   const holdings      = portfolio?.holdings || {}

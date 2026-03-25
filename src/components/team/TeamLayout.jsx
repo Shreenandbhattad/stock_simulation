@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { useGameState } from '../../hooks/useGameState'
+import { useGameContext } from '../../contexts/GameContext'
 import NewsTicker from '../common/NewsTicker'
 import RoundTimer from '../common/RoundTimer'
 import Portfolio from './Portfolio'
@@ -29,7 +29,7 @@ export default function TeamLayout() {
   const [activeTab, setActiveTab]   = useState('portfolio')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { user, teamData, logout }  = useAuth()
-  const { gameState }               = useGameState()
+  const { gameState }               = useGameContext()
 
   const statusInfo = STATUS_BADGE[gameState?.status] || STATUS_BADGE.waiting
 
