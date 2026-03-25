@@ -26,10 +26,8 @@ export default function NewsTicker() {
 
   const text = news
     .map((n) => {
-      const stocks = (n.affected_stocks || [])
-        .map((s) => `${s.symbol} ${s.changePercent > 0 ? '▲' : '▼'}${Math.abs(s.changePercent)}%`)
-        .join('  •  ')
-      return `R${n.round}  |  ${n.headline}${stocks ? '  —  ' + stocks : ''}`
+      const symbols = (n.affected_stocks || []).map((s) => s.symbol).join('  •  ')
+      return `R${n.round}  |  ${n.headline}${symbols ? '  —  ' + symbols : ''}`
     })
     .join('          ◆          ')
 

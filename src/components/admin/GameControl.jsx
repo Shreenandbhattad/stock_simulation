@@ -6,7 +6,7 @@ import {
   setGameState, initGameState, restartGame,
   saveRoundDurations, saveScheduledNews,
   startRoundTimer, pauseRoundTimer, resumeRoundTimer, clearRoundTimer,
-  publishNews,
+  publishNews, applyRoundNewsEffects,
 } from '../../services/adminService'
 import RoundTimer from '../common/RoundTimer'
 import LoadingSpinner from '../common/LoadingSpinner'
@@ -61,14 +61,18 @@ export default function GameControl() {
     }
   }, [gameState, schedLoaded])
 
-  // Auto-pause when timer reaches 0
+  // Auto-pause when timer reaches 0 and apply deferred news price effects
   useEffect(() => {
     if (secondsLeft === 0 && gameState?.trading_enabled && !autoPausedRef.current) {
       autoPausedRef.current = true
+      const roundNum = gameState.round_number
+      const alreadyApplied = (gameState?.price_applied_round || 0) >= roundNum
       setGameState({
-        status: 'paused', tradingEnabled: false, roundNumber: gameState.round_number,
+        status: 'paused', tradingEnabled: false, roundNumber: roundNum,
         roundEndTime: null, timerPausedRemaining: 0,
-      }).then(() => toast.success('⏱ Time up — trading paused'))
+      })
+        .then(() => alreadyApplied ? null : applyRoundNewsEffects(roundNum))
+        .then(() => toast.success('⏱ Time up — round ended, prices updated!'))
         .catch(err => toast.error(err.message))
     }
     if (secondsLeft > 0) autoPausedRef.current = false
@@ -88,6 +92,13 @@ export default function GameControl() {
         case 'start-round': {
           const next    = (current.round_number || 0) + 1
           const durMins = durations[next - 1] ?? 10
+
+          // Safety net: apply deferred price effects for the round that just ended
+          // (in case timer was manually stopped before hitting 0)
+          if (current.round_number > 0) {
+            const alreadyApplied = (gameState?.price_applied_round || 0) >= current.round_number
+            if (!alreadyApplied) await applyRoundNewsEffects(current.round_number)
+          }
 
           await setGameState({ status: 'active', tradingEnabled: true, roundNumber: next, timerPausedRemaining: null })
           await startRoundTimer(durMins * 60)
@@ -127,10 +138,14 @@ export default function GameControl() {
           toast.success('Trading resumed')
           break
 
-        case 'end':
+        case 'end': {
+          // Apply deferred price effects for the final round before ending
+          const alreadyApplied = (gameState?.price_applied_round || 0) >= current.round_number
+          if (!alreadyApplied && current.round_number > 0) await applyRoundNewsEffects(current.round_number)
           await setGameState({ status: 'ended', tradingEnabled: false, roundNumber: current.round_number, roundEndTime: null, timerPausedRemaining: null })
-          toast.success('Game ended — final leaderboard is live')
+          toast.success('Game ended — final prices updated, leaderboard is live!')
           break
+        }
 
         case 'restart':
           if (!window.confirm('Restart the game?\n\n• Round resets to 0\n• ALL teams reset to ₹1,00,000\n• Holdings cleared\n\nThis cannot be undone.')) { setSaving(false); return }
@@ -410,9 +425,9 @@ export default function GameControl() {
         {[
           ['Set Durations', 'Fill in minutes per round, click Save'],
           ['Schedule News', 'Add news flashes for each round — auto-publish on Start Round'],
-          ['Start Round', 'Timer starts, trading opens, and scheduled news fires instantly'],
-          ['Timer Ends', 'Trading auto-pauses when time runs out'],
-          ['Repeat', 'Start next round; add more news from News tab if needed'],
+          ['Start Round', 'Timer starts, trading opens, and news flashes publish (prices unchanged)'],
+          ['Timer Ends', 'Trading pauses and news-driven price changes apply — teams see the new prices'],
+          ['Repeat', 'Start next round; teams trade on the updated prices and new news'],
         ].map(([step, desc], i) => (
           <div key={i} style={{ display: 'flex', gap: 12, marginBottom: 10, alignItems: 'flex-start' }}>
             <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#1a2740', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#94a3b8', flexShrink: 0, marginTop: 1 }}>{i + 1}</div>

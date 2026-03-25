@@ -47,7 +47,7 @@ export async function createTeamAccount({ teamName, email, password, cashBalance
   if (teamError) throw new Error(teamError.message)
 }
 
-export async function setGameState({ status, tradingEnabled, roundNumber, roundEndTime, timerPausedRemaining }) {
+export async function setGameState({ status, tradingEnabled, roundNumber, roundEndTime, timerPausedRemaining, priceAppliedRound }) {
   // Only include fields that were explicitly passed (undefined = don't touch)
   const row = { id: 'current', updated_at: new Date().toISOString() }
   if (status !== undefined) row.status = status
@@ -55,6 +55,7 @@ export async function setGameState({ status, tradingEnabled, roundNumber, roundE
   if (roundNumber !== undefined) row.round_number = roundNumber
   if (roundEndTime !== undefined) row.round_end_time = roundEndTime          // null explicitly clears
   if (timerPausedRemaining !== undefined) row.timer_paused_remaining = timerPausedRemaining
+  if (priceAppliedRound !== undefined) row.price_applied_round = priceAppliedRound
   const { error } = await supabase.from('game_state').upsert(row)
   if (error) throw new Error(error.message)
 }
@@ -133,37 +134,49 @@ export async function deleteStock(symbol) {
   if (error) throw new Error(error.message)
 }
 
+// Publishes a news flash visible to all teams.
+// Price changes are NOT applied here — they are deferred to round end (applyRoundNewsEffects).
 export async function publishNews({ headline, body, round, affectedStocks }) {
-  // 1. Insert news
-  const { error: newsError } = await supabase.from('news').insert({
+  const { error } = await supabase.from('news').insert({
     headline: headline.trim(),
     body: body?.trim() || '',
     round,
     affected_stocks: affectedStocks,
     published_at: new Date().toISOString(),
   })
-  if (newsError) throw new Error(newsError.message)
+  if (error) throw new Error(error.message)
+}
 
-  // 2. Update each affected stock price
-  for (const { symbol, changePercent } of affectedStocks) {
-    const { data: stock } = await supabase
-      .from('stocks').select('current_price').eq('symbol', symbol).single()
-    if (!stock) continue
+// Applies the deferred price effects from all news items published in a given round.
+// Call this when a round ends (timer hits 0, game ends, or next round starts).
+// Idempotent: tracks the last applied round in game_state.price_applied_round.
+export async function applyRoundNewsEffects(roundNumber) {
+  const { data: newsItems, error } = await supabase
+    .from('news').select('affected_stocks').eq('round', roundNumber)
+  if (error) throw new Error(error.message)
 
-    const prev = stock.current_price
-    const newPrice = Math.round(prev * (1 + changePercent / 100) * 100) / 100
-
-    const { error } = await supabase.from('stocks').update({
-      previous_price: prev,
-      current_price: newPrice,
-      price_change_percent: changePercent,
-      updated_at: new Date().toISOString(),
-    }).eq('symbol', symbol)
-    if (error) throw new Error(error.message)
+  if (newsItems?.length) {
+    for (const item of newsItems) {
+      if (!item.affected_stocks?.length) continue
+      for (const { symbol, changePercent } of item.affected_stocks) {
+        const { data: stock } = await supabase
+          .from('stocks').select('current_price').eq('symbol', symbol).single()
+        if (!stock) continue
+        const prev = stock.current_price
+        const newPrice = Math.max(1, Math.round(prev * (1 + Number(changePercent) / 100) * 100) / 100)
+        await supabase.from('stocks').update({
+          previous_price: prev,
+          current_price: newPrice,
+          price_change_percent: Number(changePercent),
+          updated_at: new Date().toISOString(),
+        }).eq('symbol', symbol)
+      }
+    }
+    await recalculateAllPortfolios()
   }
 
-  // 3. Recalculate all portfolios
-  await recalculateAllPortfolios()
+  // Mark this round's effects as applied so we don't double-apply
+  await setGameState({ priceAppliedRound: roundNumber })
 }
 
 export async function createTeam({ email, uid, teamName, cashBalance = 100000 }) {

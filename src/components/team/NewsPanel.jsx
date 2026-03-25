@@ -25,17 +25,18 @@ export default function NewsPanel() {
               {item.body && <p style={{ fontSize: 12.5, color: '#64748b', marginBottom: 10, lineHeight: 1.55 }}>{item.body}</p>}
               {item.affected_stocks?.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 6 }}>
+                  <span style={{ fontSize: 11, color: '#475569', alignSelf: 'center' }}>Stocks in play:</span>
                   {item.affected_stocks.map((s) => (
                     <span
                       key={s.symbol}
                       style={{
                         fontSize: 11, fontFamily: 'monospace', fontWeight: 700, padding: '3px 10px', borderRadius: 20,
-                        background: s.changePercent > 0 ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)',
-                        color: s.changePercent > 0 ? '#4ade80' : '#f87171',
-                        border: `1px solid ${s.changePercent > 0 ? 'rgba(74,222,128,0.2)' : 'rgba(248,113,113,0.2)'}`,
+                        background: 'rgba(148,163,184,0.08)',
+                        color: '#94a3b8',
+                        border: '1px solid rgba(148,163,184,0.15)',
                       }}
                     >
-                      {s.symbol} {s.changePercent > 0 ? '▲' : '▼'}{Math.abs(s.changePercent)}%
+                      {s.symbol}
                     </span>
                   ))}
                 </div>
