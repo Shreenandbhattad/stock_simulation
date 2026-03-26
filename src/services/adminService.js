@@ -134,8 +134,7 @@ export async function deleteStock(symbol) {
   if (error) throw new Error(error.message)
 }
 
-// Publishes a news flash visible to all teams.
-// Price changes are NOT applied here — they are deferred to round end (applyRoundNewsEffects).
+// Publishes a news flash and immediately applies the price changes to affected stocks.
 export async function publishNews({ headline, body, round, affectedStocks }) {
   const { error } = await supabase.from('news').insert({
     headline: headline.trim(),
@@ -145,42 +144,94 @@ export async function publishNews({ headline, body, round, affectedStocks }) {
     published_at: new Date().toISOString(),
   })
   if (error) throw new Error(error.message)
+
+  // Apply price changes immediately
+  const client = supabaseAdmin || supabase
+  let updated = 0
+  for (const { symbol, changePercent } of affectedStocks) {
+    const pct = Number(changePercent)
+    if (!symbol || isNaN(pct) || pct === 0) continue
+
+    const { data: stock } = await client
+      .from('stocks').select('current_price').eq('symbol', symbol.trim().toUpperCase()).single()
+    if (!stock) continue
+
+    const prev     = stock.current_price
+    const newPrice = Math.max(1, Math.round(prev * (1 + pct / 100) * 100) / 100)
+
+    const { error: updErr } = await client.from('stocks').update({
+      previous_price:       prev,
+      current_price:        newPrice,
+      price_change_percent: pct,
+      updated_at:           new Date().toISOString(),
+    }).eq('symbol', symbol.trim().toUpperCase())
+
+    if (updErr) throw new Error(`Price update failed for ${symbol}: ${updErr.message}`)
+    updated++
+  }
+
+  if (updated > 0) await recalculateAllPortfolios()
 }
 
 // Applies the deferred price effects from all news items published in a given round.
 // Call this when a round ends (timer hits 0, game ends, or next round starts).
 // Idempotent: tracks the last applied round in game_state.price_applied_round.
-// Applies scheduled price changes for a completed round.
-// Reads directly from savedSchedule (game_state.scheduled_news) — no SQL function needed.
-// Returns the number of stocks whose price was updated.
+// Applies all deferred price effects for a completed round.
+// Sources: (1) news table rows for that round, (2) game_state.scheduled_news fallback.
+// Returns count of stocks updated.
 export async function applyRoundNewsEffects(roundNumber, savedSchedule = []) {
   const client = supabaseAdmin || supabase
-  const items = savedSchedule.filter(n => Number(n.round) === roundNumber)
-  let count = 0
 
-  for (const item of items) {
+  // Collect all {symbol → pct} changes from every source
+  const changes = {}
+
+  // Source 1: published news table (covers both auto-published scheduled and manual flashes)
+  const { data: newsRows } = await client
+    .from('news')
+    .select('affected_stocks')
+    .eq('round', roundNumber)
+
+  for (const row of (newsRows || [])) {
+    let impacts = row.affected_stocks
+    if (!impacts) continue
+    if (typeof impacts === 'string') {
+      try { impacts = JSON.parse(impacts) } catch { continue }
+    }
+    if (!Array.isArray(impacts)) continue
+    for (const imp of impacts) {
+      const sym = (imp?.symbol || '').trim().toUpperCase()
+      const pct = Number(imp?.changePercent ?? imp?.change_percent ?? 0)
+      if (sym && !isNaN(pct) && pct !== 0) changes[sym] = pct
+    }
+  }
+
+  // Source 2: saved schedule (fallback — in case news table was cleared)
+  for (const item of savedSchedule.filter(n => Number(n.round) === roundNumber)) {
     for (const s of (item.stocks || [])) {
       const sym = (s.symbol || '').trim().toUpperCase()
       const pct = Number(s.changePercent)
-      if (!sym || isNaN(pct) || pct === 0) continue
-
-      const { data: stock, error: fetchErr } = await client
-        .from('stocks').select('current_price').eq('symbol', sym).single()
-      if (fetchErr || !stock) continue
-
-      const prev     = stock.current_price
-      const newPrice = Math.max(1, Math.round(prev * (1 + pct / 100) * 100) / 100)
-
-      const { error: updErr } = await client.from('stocks').update({
-        previous_price:       prev,
-        current_price:        newPrice,
-        price_change_percent: pct,
-        updated_at:           new Date().toISOString(),
-      }).eq('symbol', sym)
-
-      if (updErr) throw new Error(`Could not update ${sym}: ${updErr.message}`)
-      count++
+      if (sym && !isNaN(pct) && pct !== 0 && !(sym in changes)) changes[sym] = pct
     }
+  }
+
+  let count = 0
+  for (const [sym, pct] of Object.entries(changes)) {
+    const { data: stock } = await client
+      .from('stocks').select('current_price').eq('symbol', sym).single()
+    if (!stock) continue
+
+    const prev     = stock.current_price
+    const newPrice = Math.max(1, Math.round(prev * (1 + pct / 100) * 100) / 100)
+
+    const { error: updErr } = await client.from('stocks').update({
+      previous_price:       prev,
+      current_price:        newPrice,
+      price_change_percent: pct,
+      updated_at:           new Date().toISOString(),
+    }).eq('symbol', sym)
+
+    if (updErr) throw new Error(`Price update failed for ${sym}: ${updErr.message}`)
+    count++
   }
 
   if (count > 0) await recalculateAllPortfolios()
