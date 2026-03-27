@@ -2,7 +2,7 @@
 
 A real-time, browser-based stock trading competition platform built for the **Ashoka Winter Investment & Finance Simulation (AWIFS)**. Teams compete by buying and selling stocks through a central broker, with prices moving dynamically based on actual trade activity and admin-published news flashes.
 
-**Live deployment:** `https://shreenandbhattad.github.io/stock_simulation/`
+**Live deployment:** `awifs.co.in`
 
 ---
 
