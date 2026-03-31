@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { useGameState } from '../../hooks/useGameState'
-import { useTeamPortfolio } from '../../hooks/useTeamPortfolio'
+import { useGameContext } from '../../contexts/GameContext'
 import { buyStock, sellStock } from '../../services/tradeService'
 import toast from 'react-hot-toast'
 
@@ -9,8 +8,7 @@ export default function TradeModal({ stock, mode, onClose }) {
   const [qty, setQty]       = useState('')
   const [loading, setLoading] = useState(false)
   const { user }            = useAuth()
-  const { gameState }       = useGameState()
-  const { portfolio }       = useTeamPortfolio(user?.id)
+  const { gameState, portfolio } = useGameContext()
 
   const quantity       = parseInt(qty, 10)
   const isValid        = quantity > 0 && Number.isInteger(quantity)

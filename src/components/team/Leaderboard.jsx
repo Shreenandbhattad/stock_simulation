@@ -1,11 +1,11 @@
-import { useLeaderboard } from '../../hooks/useLeaderboard'
+import { useGameContext } from '../../contexts/GameContext'
 import { useAuth } from '../../contexts/AuthContext'
 import LoadingSpinner from '../common/LoadingSpinner'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
 export default function Leaderboard() {
-  const { leaderboard, loading } = useLeaderboard()
+  const { leaderboard, loading } = useGameContext()
   const { user } = useAuth()
 
   if (loading) return <LoadingSpinner />

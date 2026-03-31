@@ -1,5 +1,3 @@
-import { useAuth } from '../../contexts/AuthContext'
-import { useTeamPortfolio } from '../../hooks/useTeamPortfolio'
 import { useGameContext } from '../../contexts/GameContext'
 import LoadingSpinner from '../common/LoadingSpinner'
 import PriceTag from '../common/PriceTag'
@@ -14,9 +12,7 @@ function StatCard({ label, value, accent }) {
 }
 
 export default function Portfolio() {
-  const { user } = useAuth()
-  const { portfolio, loading: pLoading } = useTeamPortfolio(user?.id)
-  const { stocks } = useGameContext()
+  const { portfolio, stocks, loading: pLoading } = useGameContext()
 
   if (pLoading) return <LoadingSpinner />
 

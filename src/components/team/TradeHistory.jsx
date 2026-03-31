@@ -1,10 +1,8 @@
-import { useAuth } from '../../contexts/AuthContext'
-import { useTransactions } from '../../hooks/useTransactions'
+import { useGameContext } from '../../contexts/GameContext'
 import LoadingSpinner from '../common/LoadingSpinner'
 
 export default function TradeHistory() {
-  const { user } = useAuth()
-  const { transactions, loading } = useTransactions(user?.id)
+  const { transactions, loading } = useGameContext()
   if (loading) return <LoadingSpinner />
 
   const fmt = (n) => `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
