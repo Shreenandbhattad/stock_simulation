@@ -138,6 +138,15 @@ export default function TeamLayout() {
         </main>
 
         <NewsTicker />
+
+        <div style={{ padding: '5px 20px', background: '#060b14', textAlign: 'right', fontSize: 10, color: '#475569', flexShrink: 0 }}>
+          Developed by{' '}
+          <a href="https://www.linkedin.com/in/shreenandbhattad/" target="_blank" rel="noopener noreferrer"
+            style={{ color: '#94a3b8', textDecoration: 'none', fontWeight: 600 }}
+            onMouseEnter={(e) => e.currentTarget.style.color = '#e2e8f4'}
+            onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
+          >Shreenand Bhattad</a>
+        </div>
       </div>
     </div>
   )
